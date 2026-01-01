@@ -25,7 +25,7 @@ const FILES = [
   { file: "Nintendo_64_No-Intro_GameID.csv", name: "Nintendo 64" },
   { file: "Nintendo_GameCube_Redump_GameID_List.csv", name: "Nintendo GameCube" },
   { file: "Nintendo_Wii_Redump_GameID_List.csv", name: "Nintendo Wii" },
-  { file: "Panasonic_3DO_Redump_GameID_List.csv", name: "The 3D0 Company" },
+  { file: "Panasonic_3DO_Redump_GameID_List.csv", name: "The 3DO Company" },
   { file: "Sega_Dreamcast_Redump_GameID_List.csv", name: "Sega Dreamcast" },
   { file: "Sega_Mega_CD_Redump_GameID_List.csv", name: "Sega CD / Mega CD" },
   { file: "Sega_MegaDrive_Genesis_No-Intro_GameID.csv", name: "Sega Genesis/Mega Drive" },
