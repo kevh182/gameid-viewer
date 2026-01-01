@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/Redump_GameID/static/css/main.e6c13ad2.css",
+    "main.js": "/Redump_GameID/static/js/main.c64bbaa7.js",
+    "static/js/453.3c49bf79.chunk.js": "/Redump_GameID/static/js/453.3c49bf79.chunk.js",
+    "index.html": "/Redump_GameID/index.html",
+    "main.e6c13ad2.css.map": "/Redump_GameID/static/css/main.e6c13ad2.css.map",
+    "main.c64bbaa7.js.map": "/Redump_GameID/static/js/main.c64bbaa7.js.map",
+    "453.3c49bf79.chunk.js.map": "/Redump_GameID/static/js/453.3c49bf79.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.e6c13ad2.css",
+    "static/js/main.c64bbaa7.js"
+  ]
+}
