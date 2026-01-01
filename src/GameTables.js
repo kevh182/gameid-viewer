@@ -107,7 +107,7 @@ function GameTables() {
 
   return (
     <div>
-      <h2>Select CSV List</h2>
+      <h2>Select GameID List</h2>
       <Select
         value={selectedFile}
         onChange={e => setSelectedFile(e.target.value)}
