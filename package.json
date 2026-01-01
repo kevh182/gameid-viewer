@@ -1,6 +1,6 @@
 {
   "name": "gameid-viewer",
-  "homepage": "https://kevh182.github.io/Redump_GameID",
+  "homepage": "https://kevh182.github.io/gameid-viewer",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
