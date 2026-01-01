@@ -1,24 +1,36 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useState } from 'react';
+import GameTables from './GameTables';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import { Button } from '@mui/material';
 
 function App() {
+  const [mode, setMode] = useState('dark'); // Start with dark, or 'light' if you prefer
+
+  const theme = createTheme({
+    palette: {
+      mode,
+    },
+  });
+
+  // Toggle handler
+  const handleToggleTheme = () => {
+    setMode((prev) => (prev === 'dark' ? 'light' : 'dark'));
+  };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <div style={{padding: 32}}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+          <h1>GameID Viewer</h1>
+          <Button variant="outlined" onClick={handleToggleTheme}>
+            Switch to {mode === 'dark' ? 'Light' : 'Dark'} Mode
+          </Button>
+        </div>
+        <GameTables />
+      </div>
+    </ThemeProvider>
   );
 }
 
