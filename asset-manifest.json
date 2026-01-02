@@ -1,15 +1,15 @@
 {
   "files": {
     "main.css": "/gameid-viewer/static/css/main.e6c13ad2.css",
-    "main.js": "/gameid-viewer/static/js/main.ca79b487.js",
+    "main.js": "/gameid-viewer/static/js/main.e31d55f9.js",
     "static/js/453.3c49bf79.chunk.js": "/gameid-viewer/static/js/453.3c49bf79.chunk.js",
     "index.html": "/gameid-viewer/index.html",
     "main.e6c13ad2.css.map": "/gameid-viewer/static/css/main.e6c13ad2.css.map",
-    "main.ca79b487.js.map": "/gameid-viewer/static/js/main.ca79b487.js.map",
+    "main.e31d55f9.js.map": "/gameid-viewer/static/js/main.e31d55f9.js.map",
     "453.3c49bf79.chunk.js.map": "/gameid-viewer/static/js/453.3c49bf79.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.e6c13ad2.css",
-    "static/js/main.ca79b487.js"
+    "static/js/main.e31d55f9.js"
   ]
 }
