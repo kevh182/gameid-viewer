@@ -17,8 +17,9 @@ import {
   TableContainer,
   Paper,
 } from '@mui/material';
+import { ResizableBox } from 'react-resizable';
+import 'react-resizable/css/styles.css'; // import styles for resize handles
 
-// Config: Filenames and GitHub raw CSV base URL
 const GITHUB_RAW_BASE = "https://raw.githubusercontent.com/kevh182/Redump_GameID/main/";
 const FILES = [
   { file: "Microsoft_Xbox_Redump_GameID_List.csv", name: "Microsoft Xbox" },
@@ -42,10 +43,12 @@ function GameTables() {
   const [data, setData] = useState([]);
   const [search, setSearch] = useState('');
 
-  // For column visibility UI
   const [columns, setColumns] = useState([]);
   const [anchorEl, setAnchorEl] = useState(null);
   const [visibleColumns, setVisibleColumns] = useState({});
+
+  // Track column widths (default 180px per col)
+  const [colWidths, setColWidths] = useState({});
 
   // Load selected CSV only when selectedFile changes
   useEffect(() => {
@@ -58,10 +61,8 @@ function GameTables() {
       const url = GITHUB_RAW_BASE + selectedFile;
       const csvText = await fetch(url).then(res => res.text());
       let parsed = Papa.parse(csvText, { header: true }).data;
-      // Remove any blank rows (common with Papa)
       parsed = parsed.filter(row => Object.values(row).some(v => !!v));
       setData(parsed);
-      // Dynamically set columns
       const allCols = new Set();
       parsed.forEach(row => Object.keys(row).forEach(col => allCols.add(col)));
       setColumns([...allCols]);
@@ -69,7 +70,6 @@ function GameTables() {
     loadCSV();
   }, [selectedFile]);
 
-  // Whenever data columns update, reset column visibility (keep user overrides)
   useEffect(() => {
     if (columns.length) {
       setVisibleColumns(prev =>
@@ -78,10 +78,15 @@ function GameTables() {
           {}
         )
       );
+      setColWidths(prev =>
+        columns.reduce(
+          (obj, c) => ({ ...obj, [c]: prev[c] || 180 }),
+          {}
+        )
+      );
     }
   }, [columns]);
 
-  // Export currently filtered table to CSV (visible columns only)
   const handleExport = () => {
     const exportData = data.map(row =>
       Object.fromEntries(
@@ -97,7 +102,6 @@ function GameTables() {
     a.click();
   };
 
-  // Only show rows matching search string
   const filteredData = data.filter(row =>
     columns
       .filter(col => visibleColumns[col])
@@ -107,9 +111,49 @@ function GameTables() {
       .includes(search.toLowerCase())
   );
 
+  const handleResize = (col, newWidth) => {
+    setColWidths((prev) => ({
+      ...prev,
+      [col]: Math.max(newWidth, 50) // minimum width 50px
+    }));
+  };
+
+  // Helper for resizable table header cell
+  const ResizableTH = ({ col, width, children }) => (
+    <ResizableBox
+      width={width}
+      height={40}
+      axis="x"
+      handle={
+        <span
+          className="custom-table-col-resizer"
+          style={{
+            position: "absolute",
+            right: 0,
+            top: 0,
+            height: "100%",
+            width: "8px",
+            cursor: "col-resize",
+            zIndex: 1
+          }}
+        />
+      }
+      onResizeStop={(e, { size }) => handleResize(col, size.width)}
+      draggableOpts={{ enableUserSelectHack: false }}
+      minConstraints={[50, 40]}
+      maxConstraints={[600, 40]}
+      style={{ display: "inline-block" }}
+      resizeHandles={['e']}
+    >
+      <div style={{ width: "100%", height: "100%", position: "relative", display: "flex", alignItems: "center" }}>
+        {children}
+      </div>
+    </ResizableBox>
+  );
+
   return (
     <div>
-      <h2>Select GameID List</h2>
+      <h2>Select CSV List</h2>
       <Select
         value={selectedFile}
         onChange={e => setSelectedFile(e.target.value)}
@@ -182,7 +226,20 @@ function GameTables() {
             <TableHead>
               <TableRow>
                 {columns.filter(key => visibleColumns[key]).map(key => (
-                  <TableCell key={key}>{key}</TableCell>
+                  <TableCell
+                    key={key}
+                    style={{
+                      width: colWidths[key] || 180,
+                      minWidth: 50,
+                      paddingRight: 2,
+                      position: "relative",
+                      zIndex: 10
+                    }}
+                  >
+                    <ResizableTH col={key} width={colWidths[key] || 180}>
+                      {key}
+                    </ResizableTH>
+                  </TableCell>
                 ))}
               </TableRow>
             </TableHead>
@@ -190,7 +247,20 @@ function GameTables() {
               {filteredData.map((row, i) => (
                 <TableRow key={i}>
                   {columns.filter(key => visibleColumns[key]).map((key, j) => (
-                    <TableCell key={j}>{row[key]}</TableCell>
+                    <TableCell
+                      key={j}
+                      style={{
+                        width: colWidths[key] || 180,
+                        minWidth: 50,
+                        maxWidth: 600,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        paddingRight: 2
+                      }}
+                    >
+                      {row[key]}
+                    </TableCell>
                   ))}
                 </TableRow>
               ))}
@@ -205,6 +275,16 @@ function GameTables() {
           <p style={{ marginTop: 20, padding: 24 }}>Loading...</p>
         )}
       </TableContainer>
+      <style>
+        {`
+          .custom-table-col-resizer {
+              background: transparent;
+          }
+          .custom-table-col-resizer:hover {
+              background: #aaa;
+          }
+        `}
+      </style>
     </div>
   );
 }
