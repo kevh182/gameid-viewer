@@ -160,7 +160,7 @@ function GameTables() {
 
   // Resizable header cell wrapper
   const ResizableTH = ({ col, width, children }) => {
-    if (! headerRefs.current[col]) {
+    if (!headerRefs.current[col]) {
       headerRefs.current[col] = React.createRef();
     }
 
@@ -204,8 +204,8 @@ function GameTables() {
             width: "100%",
             height: "100%",
             position: "relative",
-            display:  "flex",
-            alignItems:  "center",
+            display: "flex",
+            alignItems: "center",
             overflow: "hidden",
             whiteSpace: "nowrap",
             paddingRight: "12px"
@@ -250,7 +250,7 @@ function GameTables() {
         onChange={e => setSearch(e.target.value)}
         size="small"
         style={{ marginLeft: 16, minWidth: 220 }}
-        disabled={! selectedFile}
+        disabled={!selectedFile}
       />
       <Button
         variant="contained"
@@ -274,7 +274,7 @@ function GameTables() {
         onClose={() => setAnchorEl(null)}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
       >
-        <FormGroup style={{ padding: 16 }}>
+        <FormGroup style={{ padding:  16 }}>
           {columns.map(column => (
             <FormControlLabel
               key={column}
@@ -284,7 +284,7 @@ function GameTables() {
                   onChange={() =>
                     setVisibleColumns(v => ({
                       ...v,
-                      [column]: !v[column],
+                      [column]: ! v[column],
                     }))
                   }
                 />
@@ -296,21 +296,30 @@ function GameTables() {
       </Popover>
       <TableContainer
         component={Paper}
-        style={{ maxHeight: '70vh', marginTop: 24, minWidth: 800, overflow: 'auto' }}
+        style={{
+          maxHeight: '70vh',
+          marginTop: 24,
+          minWidth: 800,
+          overflow: 'auto',
+          position: 'relative'
+        }}
       >
         {selectedFile && columns.length > 0 && (
           <Table stickyHeader size="small">
             <TableHead>
-              <TableRow>
+              <TableRow style={{ position: 'sticky', top: 0, zIndex: 100 }}>
                 {columns.filter(key => visibleColumns[key]).map(key => (
                   <TableCell
                     key={key}
                     style={{
                       width: colWidths[key] || DEFAULT_COL_WIDTH,
                       minWidth: MIN_COL_WIDTH,
-                      paddingRight: 0,
-                      position: "relative",
-                      zIndex: 10
+                      paddingRight:  0,
+                      position:  "sticky",
+                      top: 0,
+                      zIndex: 100,
+                      backgroundColor: '#f5f5f5',
+                      fontWeight: 'bold'
                     }}
                   >
                     <ResizableTH col={key} width={colWidths[key] || DEFAULT_COL_WIDTH}>
@@ -330,12 +339,12 @@ function GameTables() {
                       style={{
                         width: colWidths[key] || DEFAULT_COL_WIDTH,
                         minWidth: MIN_COL_WIDTH,
-                        maxWidth:  MAX_COL_WIDTH,
-                        padding: "8px",
+                        maxWidth: MAX_COL_WIDTH,
+                        padding:  "8px",
                         overflow: 'hidden',
-                        textOverflow:  'ellipsis',
+                        textOverflow: 'ellipsis',
                         whiteSpace: 'normal',
-                        wordBreak:  'break-word'
+                        wordBreak: 'break-word'
                       }}
                     >
                       {row[key]}
