@@ -39,7 +39,7 @@ const FILES = [
 ];
 
 const MIN_COL_WIDTH = 50;
-const MAX_COL_WIDTH = 600;
+const MAX_COL_WIDTH = 1200;
 const DEFAULT_COL_WIDTH = 180;
 
 function GameTables() {
@@ -52,9 +52,9 @@ function GameTables() {
   const [visibleColumns, setVisibleColumns] = useState({});
   const [colWidths, setColWidths] = useState({});
 
-  // Refs for measuring raw width
-  const cellRefs = useRef({}); // {colName: ref[]}
-  const headerRefs = useRef({}); // {colName: ref}
+  // Refs for measuring content width
+  const cellRefs = useRef({});
+  const headerRefs = useRef({});
 
   useEffect(() => {
     if (!selectedFile) {
@@ -89,7 +89,6 @@ function GameTables() {
           {}
         )
       );
-      // Reset content refs
       cellRefs.current = {};
       headerRefs.current = {};
     }
@@ -129,56 +128,67 @@ function GameTables() {
 
   // Double-click autosize handler
   const handleAutoSize = (col) => {
-    // Find width of header
     let maxWidth = 0;
-    if (headerRefs.current[col] && headerRefs.current[col].current) {
-      maxWidth = headerRefs.current[col].current.scrollWidth || 0;
+
+    // Check header width
+    if (headerRefs.current[col]?.current) {
+      const headerWidth = headerRefs.current[col].current.scrollWidth;
+      maxWidth = Math.max(maxWidth, headerWidth);
     }
-    // Find width of every data cell (visible only)
+
+    // Check all visible data cell widths
     if (cellRefs.current[col] && Array.isArray(cellRefs.current[col])) {
       cellRefs.current[col].forEach(ref => {
-        if (ref && ref.current) {
-          const w = ref.current.scrollWidth || 0;
-          if (w > maxWidth) maxWidth = w;
+        if (ref?.current) {
+          const cellWidth = ref.current.scrollWidth;
+          maxWidth = Math.max(maxWidth, cellWidth);
         }
       });
     }
-    // add a little padding
-    maxWidth = Math.max(MIN_COL_WIDTH, Math.min(maxWidth + 24, MAX_COL_WIDTH));
+
+    // Add padding and constrain
+    const finalWidth = Math.max(
+      MIN_COL_WIDTH,
+      Math.min(maxWidth + 16, MAX_COL_WIDTH)
+    );
+
     setColWidths(prev => ({
       ...prev,
-      [col]: maxWidth
+      [col]: finalWidth
     }));
   };
 
-  // Helper for resizable table header cell
+  // Resizable header cell wrapper
   const ResizableTH = ({ col, width, children }) => {
-    // Setup ref for measuring
-    if (!headerRefs.current[col]) headerRefs.current[col] = React.createRef();
+    if (! headerRefs.current[col]) {
+      headerRefs.current[col] = React.createRef();
+    }
 
-    // We'll render the handle as a <span> at the right edge
     return (
       <ResizableBox
         width={width}
         height={40}
         axis="x"
         handle={
-          <span
+          <div
             className="custom-table-col-resizer"
             style={{
               position: "absolute",
               right: 0,
-              top: 0,
+              top:  0,
               height: "100%",
-              width: "8px",
+              width: "12px",
               cursor: "col-resize",
-              zIndex: 1
+              zIndex: 1,
+              backgroundColor: "#1976d2",
+              opacity: 0.6,
             }}
             onDoubleClick={e => {
               e.stopPropagation();
+              e.preventDefault();
               handleAutoSize(col);
             }}
-            title="Double-click to autosize"
+            title="Drag to resize | Double-click to auto-fit"
           />
         }
         onResizeStop={(e, { size }) => handleResize(col, size.width)}
@@ -194,8 +204,11 @@ function GameTables() {
             width: "100%",
             height: "100%",
             position: "relative",
-            display: "flex",
-            alignItems: "center"
+            display:  "flex",
+            alignItems:  "center",
+            overflow: "hidden",
+            whiteSpace: "nowrap",
+            paddingRight: "12px"
           }}
         >
           {children}
@@ -204,10 +217,14 @@ function GameTables() {
     );
   };
 
-  // Pre-allocate refs for each visible col/cell
+  // Get or create refs for cell measurement
   const getCellRef = (col, i) => {
-    if (!cellRefs.current[col]) cellRefs.current[col] = [];
-    if (!cellRefs.current[col][i]) cellRefs.current[col][i] = React.createRef();
+    if (!cellRefs.current[col]) {
+      cellRefs.current[col] = [];
+    }
+    if (!cellRefs.current[col][i]) {
+      cellRefs.current[col][i] = React.createRef();
+    }
     return cellRefs.current[col][i];
   };
 
@@ -233,13 +250,13 @@ function GameTables() {
         onChange={e => setSearch(e.target.value)}
         size="small"
         style={{ marginLeft: 16, minWidth: 220 }}
-        disabled={!selectedFile}
+        disabled={! selectedFile}
       />
       <Button
         variant="contained"
         onClick={handleExport}
         style={{ marginLeft: 16 }}
-        disabled={!selectedFile || !filteredData.length}
+        disabled={!selectedFile || ! filteredData.length}
       >
         Export to CSV
       </Button>
@@ -263,7 +280,7 @@ function GameTables() {
               key={column}
               control={
                 <Checkbox
-                  checked={visibleColumns[column] ?? true}
+                  checked={visibleColumns[column] ??  true}
                   onChange={() =>
                     setVisibleColumns(v => ({
                       ...v,
@@ -291,7 +308,7 @@ function GameTables() {
                     style={{
                       width: colWidths[key] || DEFAULT_COL_WIDTH,
                       minWidth: MIN_COL_WIDTH,
-                      paddingRight: 2,
+                      paddingRight: 0,
                       position: "relative",
                       zIndex: 10
                     }}
@@ -313,11 +330,12 @@ function GameTables() {
                       style={{
                         width: colWidths[key] || DEFAULT_COL_WIDTH,
                         minWidth: MIN_COL_WIDTH,
-                        maxWidth: MAX_COL_WIDTH,
+                        maxWidth:  MAX_COL_WIDTH,
+                        padding: "8px",
                         overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                        paddingRight: 2
+                        textOverflow:  'ellipsis',
+                        whiteSpace: 'normal',
+                        wordBreak:  'break-word'
                       }}
                     >
                       {row[key]}
@@ -329,23 +347,13 @@ function GameTables() {
           </Table>
         )}
         {!selectedFile && <p style={{ marginTop: 20, padding: 24 }}>Select a CSV to view its games list.</p>}
-        {selectedFile && columns.length > 0 && !filteredData.length && (
-          <p style={{ marginTop: 20, padding: 24 }}>No results.</p>
+        {selectedFile && columns.length > 0 && ! filteredData.length && (
+          <p style={{ marginTop:  20, padding: 24 }}>No results.</p>
         )}
         {selectedFile && columns.length === 0 && (
           <p style={{ marginTop: 20, padding: 24 }}>Loading...</p>
         )}
       </TableContainer>
-      <style>
-        {`
-          .custom-table-col-resizer {
-              background: transparent;
-          }
-          .custom-table-col-resizer:hover {
-              background: #aaa;
-          }
-        `}
-      </style>
     </div>
   );
 }
