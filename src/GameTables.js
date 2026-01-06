@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Papa from 'papaparse';
 import {
   Table,
@@ -18,7 +18,7 @@ import {
   Paper,
 } from '@mui/material';
 import { ResizableBox } from 'react-resizable';
-import 'react-resizable/css/styles.css'; // import styles for resize handles
+import 'react-resizable/css/styles.css';
 
 const GITHUB_RAW_BASE = "https://raw.githubusercontent.com/kevh182/Redump_GameID/main/";
 const FILES = [
@@ -38,6 +38,10 @@ const FILES = [
   { file: "Sony_Playstation_Portable_Redump_GameID_List.csv", name: "Sony PlayStation Portable (PSP)" },
 ];
 
+const MIN_COL_WIDTH = 50;
+const MAX_COL_WIDTH = 600;
+const DEFAULT_COL_WIDTH = 180;
+
 function GameTables() {
   const [selectedFile, setSelectedFile] = useState('');
   const [data, setData] = useState([]);
@@ -46,11 +50,12 @@ function GameTables() {
   const [columns, setColumns] = useState([]);
   const [anchorEl, setAnchorEl] = useState(null);
   const [visibleColumns, setVisibleColumns] = useState({});
-
-  // Track column widths (default 180px per col)
   const [colWidths, setColWidths] = useState({});
 
-  // Load selected CSV only when selectedFile changes
+  // Refs for measuring raw width
+  const cellRefs = useRef({}); // {colName: ref[]}
+  const headerRefs = useRef({}); // {colName: ref}
+
   useEffect(() => {
     if (!selectedFile) {
       setData([]);
@@ -80,10 +85,13 @@ function GameTables() {
       );
       setColWidths(prev =>
         columns.reduce(
-          (obj, c) => ({ ...obj, [c]: prev[c] || 180 }),
+          (obj, c) => ({ ...obj, [c]: prev[c] || DEFAULT_COL_WIDTH }),
           {}
         )
       );
+      // Reset content refs
+      cellRefs.current = {};
+      headerRefs.current = {};
     }
   }, [columns]);
 
@@ -111,45 +119,97 @@ function GameTables() {
       .includes(search.toLowerCase())
   );
 
+  // Resize handler (drag)
   const handleResize = (col, newWidth) => {
     setColWidths((prev) => ({
       ...prev,
-      [col]: Math.max(newWidth, 50) // minimum width 50px
+      [col]: Math.max(MIN_COL_WIDTH, Math.min(newWidth, MAX_COL_WIDTH))
+    }));
+  };
+
+  // Double-click autosize handler
+  const handleAutoSize = (col) => {
+    // Find width of header
+    let maxWidth = 0;
+    if (headerRefs.current[col] && headerRefs.current[col].current) {
+      maxWidth = headerRefs.current[col].current.scrollWidth || 0;
+    }
+    // Find width of every data cell (visible only)
+    if (cellRefs.current[col] && Array.isArray(cellRefs.current[col])) {
+      cellRefs.current[col].forEach(ref => {
+        if (ref && ref.current) {
+          const w = ref.current.scrollWidth || 0;
+          if (w > maxWidth) maxWidth = w;
+        }
+      });
+    }
+    // add a little padding
+    maxWidth = Math.max(MIN_COL_WIDTH, Math.min(maxWidth + 24, MAX_COL_WIDTH));
+    setColWidths(prev => ({
+      ...prev,
+      [col]: maxWidth
     }));
   };
 
   // Helper for resizable table header cell
-  const ResizableTH = ({ col, width, children }) => (
-    <ResizableBox
-      width={width}
-      height={40}
-      axis="x"
-      handle={
-        <span
-          className="custom-table-col-resizer"
+  const ResizableTH = ({ col, width, children }) => {
+    // Setup ref for measuring
+    if (!headerRefs.current[col]) headerRefs.current[col] = React.createRef();
+
+    // We'll render the handle as a <span> at the right edge
+    return (
+      <ResizableBox
+        width={width}
+        height={40}
+        axis="x"
+        handle={
+          <span
+            className="custom-table-col-resizer"
+            style={{
+              position: "absolute",
+              right: 0,
+              top: 0,
+              height: "100%",
+              width: "8px",
+              cursor: "col-resize",
+              zIndex: 1
+            }}
+            onDoubleClick={e => {
+              e.stopPropagation();
+              handleAutoSize(col);
+            }}
+            title="Double-click to autosize"
+          />
+        }
+        onResizeStop={(e, { size }) => handleResize(col, size.width)}
+        draggableOpts={{ enableUserSelectHack: false }}
+        minConstraints={[MIN_COL_WIDTH, 40]}
+        maxConstraints={[MAX_COL_WIDTH, 40]}
+        style={{ display: "inline-block" }}
+        resizeHandles={['e']}
+      >
+        <div
+          ref={headerRefs.current[col]}
           style={{
-            position: "absolute",
-            right: 0,
-            top: 0,
+            width: "100%",
             height: "100%",
-            width: "8px",
-            cursor: "col-resize",
-            zIndex: 1
+            position: "relative",
+            display: "flex",
+            alignItems: "center"
           }}
-        />
-      }
-      onResizeStop={(e, { size }) => handleResize(col, size.width)}
-      draggableOpts={{ enableUserSelectHack: false }}
-      minConstraints={[50, 40]}
-      maxConstraints={[600, 40]}
-      style={{ display: "inline-block" }}
-      resizeHandles={['e']}
-    >
-      <div style={{ width: "100%", height: "100%", position: "relative", display: "flex", alignItems: "center" }}>
-        {children}
-      </div>
-    </ResizableBox>
-  );
+        >
+          {children}
+        </div>
+      </ResizableBox>
+    );
+  };
+
+  // Pre-allocate refs for each visible col/cell
+  const getCellRef = (col, i) => {
+    if (!cellRefs.current[col]) cellRefs.current[col] = [];
+    if (!cellRefs.current[col][i]) cellRefs.current[col][i] = React.createRef();
+    return cellRefs.current[col][i];
+  };
 
   return (
     <div>
@@ -229,14 +289,14 @@ function GameTables() {
                   <TableCell
                     key={key}
                     style={{
-                      width: colWidths[key] || 180,
-                      minWidth: 50,
+                      width: colWidths[key] || DEFAULT_COL_WIDTH,
+                      minWidth: MIN_COL_WIDTH,
                       paddingRight: 2,
                       position: "relative",
                       zIndex: 10
                     }}
                   >
-                    <ResizableTH col={key} width={colWidths[key] || 180}>
+                    <ResizableTH col={key} width={colWidths[key] || DEFAULT_COL_WIDTH}>
                       {key}
                     </ResizableTH>
                   </TableCell>
@@ -249,10 +309,11 @@ function GameTables() {
                   {columns.filter(key => visibleColumns[key]).map((key, j) => (
                     <TableCell
                       key={j}
+                      ref={getCellRef(key, i)}
                       style={{
-                        width: colWidths[key] || 180,
-                        minWidth: 50,
-                        maxWidth: 600,
+                        width: colWidths[key] || DEFAULT_COL_WIDTH,
+                        minWidth: MIN_COL_WIDTH,
+                        maxWidth: MAX_COL_WIDTH,
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap',
